@@ -141,3 +141,25 @@ def eval_pointvalues(uh, x, distance_tolerance=1e-15):
     values = uh.eval(points_on_proc, cells)
 
     return values
+
+def project(expression, domain, element):
+    """
+    Project expression on FunctionSpace
+
+    Parameters
+    ----------
+    expression
+    domain : ufl.domain
+    space : ufl.element
+
+    Returns
+    -------
+    dolfinx.fem.Function
+    """
+    
+    V = fem.FunctionSpace(domain, element)
+    expr = fem.Expression(expression, V.element.interpolation_points)
+    fun = fem.Function(V)
+    fun.interpolate(expr)
+
+    return fun
