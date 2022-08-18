@@ -44,7 +44,7 @@ class Mpl2DPlotter():
             update_fun[update](params)
 
                 
-    def plot(self, fun, type, points, N, axes_id, title, cmap=cm.coolwarm, **kwargs):
+    def plot(self, fun, type, project, points, N, axes_id, title, cmap=cm.coolwarm, **kwargs):
         x = np.linspace(points[0][0], points[0][1], N[0])
         y = np.linspace(points[1][0], points[1][1], N[1])
         
@@ -58,17 +58,26 @@ class Mpl2DPlotter():
         values = eval_pointvalues(fun, compute_points)
         
         if type == 'real':
-            mag = np.linalg.norm(np.real(values), axis=1).reshape(xx.shape)
+            values = np.real(values)
         elif type == 'imag':
-            mag = np.linalg.norm(np.imag(values), axis=1).reshape(xx.shape)
+            values = np.imag(values)
         else:
-            raise TypeError(f"Unknown type of function: {type}. Should be `real` or `imag`")
+            raise TypeError(f"Unknown type of values: {type[0]}. Should be `real` or `imag`")
+        
+        if project == 'x' or project == 'scalar':
+            zz = values[:, 0].reshape(xx.shape)
+        elif project == 'y':
+            zz = values[:, 1].reshape(xx.shape)
+        elif project == 'mag':
+            zz = np.linalg.norm(values, axis=1).reshape(xx.shape)
+        else:
+            raise TypeError(f"Unknown type of projection: {project}. Should be `x`, `y` or `mag`")
         
         if self.projection == '2d':
-            surf = self.axd[axes_id].contourf(xx, yy, mag, 25, cmap=cmap)
+            surf = self.axd[axes_id].contourf(xx, yy, zz, 25, cmap=cmap)
             self.fig.colorbar(surf, ax=self.axd[axes_id])
         elif self.projection == '3d':            
-            surf = self.axd[axes_id].plot_surface(xx, yy, mag, cmap=cmap)
+            surf = self.axd[axes_id].plot_surface(xx, yy, zz, cmap=cmap)
             self.fig.colorbar(surf, ax=self.axd[axes_id], shrink=0.75)
         
         self.axd[axes_id].set_title(title, fontsize=self.fontsize)
