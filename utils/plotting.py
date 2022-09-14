@@ -1,8 +1,10 @@
 import numpy as np
 
-from matplotlib import cm
+from matplotlib import animation, cm
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
+from pathlib import Path
 
 from utils.dolfinx import eval_pointvalues
 
@@ -86,3 +88,83 @@ class Mpl2DPlotter():
             
     def save(self, filename):
         self.fig.savefig(filename, bbox_inches='tight')
+
+
+class Mpl2DAnimator():
+    
+    def __init__(self, layout=[["1"]], time=[0], projection='2d', figsize=(16, 8), fontsize=16):
+        self.layout = layout
+        self.projection = projection
+        self.figsize = figsize
+        self.fontsize = fontsize
+        self.suptitle = ''
+        self.time = time
+        
+        self.function_data = list()
+
+    def update_figure(self, **updates):
+        if 'figsize' in updates.keys():
+            self.figsize = updates['figsize']
+        if 'suptitle' in updates.keys():
+            self.suptitle = updates['suptitle']
+        if 'fontsize' in updates.keys():
+            self.fontsize = updates['fontsize']
+        
+    def add_fun(self, fun, time_data, type, project, points, N, axes_id, title, cmap=cm.coolwarm, **kwargs):
+        self.function_data.append((fun, time_data, type, project, points, N, axes_id, title, cmap))
+        
+    def write(self, path, filename='animation.mp4', fps=10, interval=500, frame_ext='png'):
+        # Plot frames and save them as temorary files
+        for idx, t in enumerate(self.time):
+            mpl = Mpl2DPlotter(layout=self.layout, projection=self.projection)
+            updates = {
+                'figsize': self.figsize,
+                'fontsize': self.fontsize,
+                'suptitle': f'{self.suptitle} t = {t:.4}'
+            }
+            mpl.update_figure(**updates)
+            
+            for fun, time_data, type, project, points, N, axes_id, title, cmap in self.function_data:
+                fun.x.array[:] = time_data[idx]
+                _ = mpl.plot(fun=fun, type=type, project=project, points=points, N=N, axes_id=axes_id, title=title)
+                
+                mpl.save(f'{path}/frame_{idx}.{frame_ext}')
+                plt.close()
+        
+        # Animator cofiguration
+        fig = plt.figure()
+        fig.set_size_inches(*self.figsize)
+        ax = plt.gca()
+        plt.axis('off')
+
+        def init():
+            im.set_data(im0)
+
+            return im,
+
+        def animate(i):
+            fname = f"{path}/frame_{i}.{frame_ext}"
+
+            img = plt.imread(fname)
+            im.set_data(img)
+
+            return im,
+
+        im0 = plt.imread(f"{path}/frame_{0}.{frame_ext}")
+        im = ax.imshow(im0)
+
+        anim = animation.FuncAnimation(fig, animate, init_func=init, repeat=True,
+                                       frames=range(1, len(self.time)), interval=interval, 
+                                       blit=True, repeat_delay=1000)
+
+        # Write animation to file
+        Writer = animation.writers['ffmpeg']
+        writer = Writer(fps=fps, metadata=dict(artist='Me'))
+        anim.save(f'{path}/{filename}', writer=writer)
+        
+        plt.close()
+        
+        # Remove temporary frames
+        for i in range(len(self.time)):
+            Path(f"{path}/frame_{i}.{frame_ext}").unlink()
+
