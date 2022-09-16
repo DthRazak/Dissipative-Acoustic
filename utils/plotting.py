@@ -8,6 +8,56 @@ from pathlib import Path
 
 from utils.dolfinx import eval_pointvalues
 
+
+class Mpl1DPlotter():
+    
+    def __init__(self, layout=[["1"]], fontsize=16):
+        """
+        Creates figure with mosaic layout
+        """
+
+        self.fontsize = fontsize
+        
+        self.fig = plt.figure(
+            constrained_layout=True, 
+            figsize=(16, 8)
+        )
+        
+        self.axd = self.fig.subplot_mosaic(
+            layout,
+            empty_sentinel=""
+        )
+        
+    def update_figure(self, **updates):
+        update_fun = {
+            'fontsize': lambda fontsize: setattr(self, 'fontsize', fontsize),
+            'figsize' : lambda figsize: self.fig.set_size_inches(*figsize),
+            'suptitle': lambda suptitle: self.fig.suptitle(suptitle, fontsize=self.fontsize)
+        }
+        
+        for update, params in updates.items():
+            update_fun[update](params)
+
+                
+    def plot(self, fun, type, points, axes_id, title, color='b', **kwargs):
+        x = np.linspace(points[0], points[1], fun.vector.array.size)
+        
+        if type == 'real':
+            values = np.real(fun.vector.array)
+        elif type == 'imag':
+            values = np.imag(fun.vector.array)
+        else:
+            raise TypeError(f"Unknown type of values: {type[0]}. Should be `real` or `imag`")
+        
+        self.axd[axes_id].plot(x, values, color=color)
+        
+        self.axd[axes_id].set_title(title, fontsize=self.fontsize)
+        self.axd[axes_id].set_xlabel('x', fontsize=self.fontsize)
+            
+    def save(self, filename):
+        self.fig.savefig(filename, bbox_inches='tight')
+
+
 class Mpl2DPlotter():
     
     def __init__(self, layout=[["1"]], projection='2d', fontsize=16):
@@ -88,6 +138,71 @@ class Mpl2DPlotter():
             
     def save(self, filename):
         self.fig.savefig(filename, bbox_inches='tight')
+
+
+class Mpl1DAnimator():
+    
+    def __init__(self, layout=[["1"]], time=[0], fontsize=16):
+        
+        self.fontsize = fontsize
+        self.time = time        
+
+        self.function_data = list()
+        
+        self.fig = plt.figure(
+            constrained_layout=True, 
+            figsize=(16, 8)
+        )
+        
+        self.axd = self.fig.subplot_mosaic(
+            layout,
+            empty_sentinel=""
+        )
+
+    def update_figure(self, **updates):
+        update_fun = {
+            'fontsize': lambda fontsize: setattr(self, 'fontsize', fontsize),
+            'figsize' : lambda figsize: self.fig.set_size_inches(*figsize),
+            'suptitle': lambda suptitle: self.fig.suptitle(suptitle, fontsize=self.fontsize)
+        }
+        
+        for update, params in updates.items():
+            update_fun[update](params)
+        
+    def add_fun(self, fun, time_data, type, points, axes_id, title, color='b', **kwargs):
+        self.function_data.append((fun, time_data, type, points, axes_id, title, color))
+        
+    def write(self, path, filename='animation.mp4', fps=10, interval=500, frame_ext='png'):        
+        ims = []
+        for idx, t in enumerate(self.time):
+            frame = []
+            for fun, time_data, type, points, axes_id, title, color in self.function_data:
+                x = np.linspace(points[0], points[1], fun.vector.array.size)
+                
+                if type == 'real':
+                    values = np.real(time_data[idx])
+                elif type == 'imag':
+                    values = np.imag(time_data[idx])
+                else:
+                    raise TypeError(f"Unknown type of values: {type[0]}. Should be `real` or `imag`")
+
+                im, = self.axd[axes_id].plot(x, values, color=color)
+
+                self.axd[axes_id].set_title(f'{title}', fontsize=self.fontsize)
+                self.axd[axes_id].set_xlabel('x', fontsize=self.fontsize)
+                self.axd[axes_id].grid(True)
+                
+                frame.append(im)
+            
+            ims.append(frame)
+            
+        ani = animation.ArtistAnimation(self.fig, ims, interval=interval, blit=True, repeat_delay=1000)
+        
+        Writer = animation.writers['ffmpeg']
+        writer = Writer(fps=fps, metadata=dict(artist='Me'))
+        ani.save(f'{path}/{filename}', writer=writer)
+        
+        plt.close()
 
 
 class Mpl2DAnimator():
