@@ -1,7 +1,9 @@
 import numpy as np
 
 from dolfinx import fem, mesh, geometry
-from ufl import Measure, inner
+from ufl import Measure, inner, dx, grad
+
+from mpi4py import MPI
 
 
 class BoundaryCondition():
@@ -163,3 +165,22 @@ def project(expression, domain, element):
     fun.interpolate(expr)
 
     return fun
+
+def L2_norm(fun):
+    comm = fun.function_space.mesh.comm
+    
+    norm_sq = comm.allreduce(fem.assemble_scalar(fem.form(inner(fun, fun) * dx)), MPI.SUM)
+    
+    return np.sqrt(norm_sq)
+
+def H1_norm(fun):
+    comm = fun.function_space.mesh.comm
+
+    norm_sq = comm.allreduce(
+        fem.assemble_scalar(
+            fem.form(inner(fun, fun) * dx + inner(grad(fun), grad(fun)) * dx)
+        ), 
+        MPI.SUM
+    )
+
+    return np.sqrt(norm_sq)
