@@ -37,7 +37,7 @@ class BoundaryCondition():
         """
 
         ds = measure['Measure']
-        fdim, facets, facet_tag = measure['Facets']
+        fdim, facet_tag = measure['Facets']
         
         self._type = type
         if type == "Dirichlet":
@@ -62,7 +62,7 @@ class BoundaryCondition():
         return self._type
 
 
-def generate_boundary_measure(boundaries, domain):
+def generate_boundary_measure(boundaries, domain, facet_tag=None):
     """
     Boundary measure generation
 
@@ -74,6 +74,9 @@ def generate_boundary_measure(boundaries, domain):
             Second - function from `x` that describe the boundary.
     domain : dolfinx.mesh.Mesh
         Mesh for a given problem
+    facet_tag : optional
+        Facet tags to define boundary, by default None.
+        If it is None, then the tags are being computed during function execution
 
     Returns
     -------
@@ -81,22 +84,24 @@ def generate_boundary_measure(boundaries, domain):
         Returns required parameters to set up BoundaryCondition
     """    
 
-    facet_indices, facet_markers = [], []
     fdim = domain.topology.dim - 1
-    for (marker, locator) in boundaries:
-        facets = mesh.locate_entities(domain, fdim, locator)
-        facet_indices.append(facets)
-        facet_markers.append(np.full_like(facets, marker))
-    facet_indices = np.hstack(facet_indices).astype(np.int32)
-    facet_markers = np.hstack(facet_markers).astype(np.int32)
-    sorted_facets = np.argsort(facet_indices)
-    facet_tag = mesh.meshtags(domain, fdim, facet_indices[sorted_facets], facet_markers[sorted_facets])
+    
+    if facet_tag is None:
+        facet_indices, facet_markers = [], []    
+        for (marker, locator) in boundaries:
+            facets = mesh.locate_entities(domain, fdim, locator)
+            facet_indices.append(facets)
+            facet_markers.append(np.full_like(facets, marker))
+        facet_indices = np.hstack(facet_indices).astype(np.int32)
+        facet_markers = np.hstack(facet_markers).astype(np.int32)
+        sorted_facets = np.argsort(facet_indices)
+        facet_tag = mesh.meshtags(domain, fdim, facet_indices[sorted_facets], facet_markers[sorted_facets])
 
     ds = Measure("ds", domain=domain, subdomain_data=facet_tag)
     
     return {
         'Measure': ds,
-        'Facets': (fdim, facets, facet_tag)
+        'Facets': (fdim, facet_tag)
     }
 
 def eval_pointvalues(uh, x, distance_tolerance=1e-15):
