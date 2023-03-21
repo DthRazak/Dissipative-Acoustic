@@ -165,7 +165,7 @@ def project(expression, domain, element):
     """
     
     V = fem.FunctionSpace(domain, element)
-    expr = fem.Expression(expression, V.element.interpolation_points)
+    expr = fem.Expression(expression, V.element.interpolation_points())
     fun = fem.Function(V)
     fun.interpolate(expr)
 

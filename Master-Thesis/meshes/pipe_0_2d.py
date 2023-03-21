@@ -1,6 +1,7 @@
 from dolfinx.io import gmshio
 
 import gmsh
+import math
 import random
 
 
@@ -99,7 +100,7 @@ def build_bubble_mesh(N, bubbles_lvl, comm, rank):
     length = 5.0
     diameter = 0.5
     h = 1.0 / N
-    bubble_radius = 0.025
+    bubble_radius = 0.1
     bubbles_lvl = max(min(bubbles_lvl, 0.5), 0.0)
 
     gmsh.initialize()
@@ -122,19 +123,34 @@ def build_bubble_mesh(N, bubbles_lvl, comm, rank):
 
         c1 = model.occ.addCurveLoop([l1, l4, l2, l3])
 
-        s1 = model.occ.addPlaneSurface([c1])
-
         # Generating random bubbles inside pipe
         max_num_of_bubbles = length / (2 * bubble_radius) * \
                              diameter / (2 * bubble_radius)
-        bubles = list()
+        bubble_centres = list()
         for i in range(int(bubbles_lvl * max_num_of_bubbles)):
             x = random.uniform(0.0 + bubble_radius, length - bubble_radius)
             y = random.uniform(0.0 + bubble_radius, diameter - bubble_radius)
-
+        
+            if len(bubble_centres) > 0:
+                is_intersect = False
+                for _x, _y in bubble_centres:
+                    if math.sqrt((_x - x) * (_x - x) + \
+                                 (_y - y) * (_y - y)) < 2 * bubble_radius:
+                        is_intersect = True
+                if not is_intersect:
+                    bubble_centres.append((x, y))
+            else:
+                bubble_centres.append((x, y))
+        
+        bubbles = list()
+        for x, y in bubble_centres:
             circle = model.occ.addCircle(x, y, 0.0, bubble_radius)
             bubble = model.occ.addCurveLoop([circle])
-            bubles.append(model.occ.addPlaneSurface([bubble]))
+            bubbles.append(model.occ.addPlaneSurface([bubble]))
+
+        # s1 = model.occ.addPlaneSurface([c1])
+        s1 = model.occ.addPlaneSurface([c1] + bubbles)
+        # s2 = model.occ.addPlaneSurface(bubbles)
 
         model.occ.synchronize()
 
@@ -144,8 +160,8 @@ def build_bubble_mesh(N, bubbles_lvl, comm, rank):
         model.addPhysicalGroup(1, [l3], 3, 'left')
         model.addPhysicalGroup(1, [l4], 4, 'right')
 
-        model.addPhysicalGroup(2, [s1], 5, 'plane')
-        model.addPhysicalGroup(2, bubles, 6, 'bubbles')
+        model.addPhysicalGroup(2, [s1], 1, 'plane')
+        model.addPhysicalGroup(2, bubbles[:-1], 2, 'bubbles')
         
         model.mesh.generate(2)
 
