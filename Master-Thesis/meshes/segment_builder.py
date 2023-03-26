@@ -6,9 +6,9 @@ class SegmentBuilder:
     # ---------------------------------------------------------------
     #                       Init Function
     # ---------------------------------------------------------------
-    def __init__(self):
-        self.length = 2.5
-        self.diameter = 0.5
+    def __init__(self, length=2.5, diameter=0.5):
+        self.length = length
+        self.diameter = diameter
         
         self._segment_handlers = {
             1: self._build_segment_1,
