@@ -2,7 +2,7 @@ import gmsh
 import numpy as np
 
 from dolfinx.io import gmshio
-from segment_builder import SegmentBuilder
+from .segment_builder import SegmentBuilder
 
 
 # ---------------------------------------------------------------
