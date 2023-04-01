@@ -7,11 +7,13 @@ import subprocess
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', type=str, help="Domain name", default='frequency')
+    parser.add_argument('-r', nargs=2, type=int, help="Input file range",
+                        default=[0, 1000], metavar=('a', 'b'))
 
     args = parser.parse_args()
 
     if args.name == 'frequency':
-        for i in range(1000):
+        for i in range(args.r[0], args.r[1]):
             command = ['mpirun', '-np', '2', './RectangleModel-FrequencyDomain-MPI.py',
                        '--i', f'{i}']
             p = subprocess.run(command, capture_output=True, text=True)

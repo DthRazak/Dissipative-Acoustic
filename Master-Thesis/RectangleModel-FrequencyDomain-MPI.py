@@ -248,7 +248,7 @@ def write_results(frequency_data, filename, write_header=True):
         if write_header:
             file.write(';'.join(f'sg_{i+1}' for i in range(10)))
             file.write(';')
-            file.write(';'.join(f'f_{i+1}' 
+            file.write(';'.join(f'f_{i+1}_r;f_{i+1}_i' 
                                   for i in range(len(frequency_data[0][1]))))
             file.write('\n')
         for data in frequency_data:
@@ -264,8 +264,8 @@ def main():
     args = parser.parse_args()
 
     frequency_data = []
-    log_step = 10
-    split_step = 100
+    log_step = 5
+    split_step = 200
 
     input_data = read_input('./input/input_1000.txt')
 
