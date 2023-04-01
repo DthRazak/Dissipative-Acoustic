@@ -264,8 +264,8 @@ def main():
     args = parser.parse_args()
 
     frequency_data = []
-    log_step = 10
-    split_step = 100
+    log_step = 5
+    split_step = 200
 
     input_data = read_input('./input/input_1000.txt')
 
