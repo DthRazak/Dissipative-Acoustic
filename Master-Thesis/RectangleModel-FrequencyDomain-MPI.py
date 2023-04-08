@@ -118,9 +118,10 @@ def solve_frequency_domain_problem(config):
     #                   Obtaining the required data
     # ----------------------------------------------------------------
 
-    domain, V, ds = config['problem']['function_space']['domain'], \
-                    config['problem']['function_space']['V'], \
-                    config['problem']['function_space']['ds']
+    domain, V, ds, dx = config['problem']['function_space']['domain'], \
+                        config['problem']['function_space']['V'], \
+                        config['problem']['function_space']['ds'], \
+                        config['problem']['function_space']['dx']
 
     mm, aa, cc, F = config['problem']['forms']['M'], \
                     config['problem']['forms']['A'], \
@@ -130,8 +131,8 @@ def solve_frequency_domain_problem(config):
     bcs, nbcs = config['problem']['boundary_conditions']['Dirichlet'], \
                 config['problem']['boundary_conditions']['Neumann']
     
-    ro, c, omega = config['problem']['physical_properties']['ro'][0], \
-                   config['problem']['physical_properties']['c'][0], \
+    ro, c, omega = config['problem']['physical_properties']['ro'], \
+                   config['problem']['physical_properties']['c'], \
                    config['problem']['physical_properties']['omega']
 
     # ----------------------------------------------------------------
@@ -178,7 +179,16 @@ def solve_frequency_domain_problem(config):
     #              Calculating pressure at right boundary
     # ----------------------------------------------------------------
     
-    p = project(ro * c**2 * div(uh), domain, ("CG", 2))
+    p = project(div(uh), domain, ("CG", 2))
+    pressure_array = np.copy(p.x.array)
+
+    fluid_cells = dx.subdomain_data().find(1)
+    p.x.array[:] = pressure_array[:] * ro[0] * c[0]**2
+    
+    if len(config['mesh']['bubble_centres']) > 0:
+        contamination_cells = dx.subdomain_data().find(2)
+        p.x.array[contamination_cells] = pressure_array[contamination_cells] * ro[1] * c[1]**2
+
     p_int = fem.assemble_scalar(fem.form(p * ds(2)))
     result = np.round(p_int, 8)
 
@@ -213,7 +223,7 @@ def generate_frequency_config(bubble_centres, bubble_lvl):
             'contaminant': 'Fuel oil',
             'pressure': 1e3,
             'freq_idx': 0,
-            'control_frequencies': [2e3, 5.6e3, 1.1e4, 1.55e4]
+            'control_frequencies': [1.5e3, 2e3, 3e3, 8e3]
         },
         'petsc': {
             'solver': 'preonly',
@@ -267,7 +277,7 @@ def main():
     log_step = 5
     split_step = 200
 
-    input_data = read_input('./input/input_1000.txt')
+    input_data = read_input('./input/input_s5_1000.txt')
 
     i = args.i
     if i % log_step == 0:
@@ -310,7 +320,7 @@ def main():
         r3_str = f'{np.real(r3)};{np.imag(r3)}'
 
         write_results([[bubble_lvl, [r0_str, r1_str, r2_str, r3_str]]], 
-                        f'./results/frequency/res_1000_p_{i // split_step}.csv', 
+                        f'./results/frequency/res_fuel_oil_s5_1000_p_{i // split_step}.csv', 
                         i == split_step)
 
     # list_timings(MPI.COMM_WORLD, [TimingType.wall])

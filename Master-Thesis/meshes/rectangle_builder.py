@@ -42,14 +42,14 @@ def build_mesh(config, comm, rank, show_logs):
     model.mesh.setSizeCallback(lambda dim, tag, x, y, z, lc: min(lc, h))
     
     if comm.rank == rank:
-        # Points defining boundaries of ten connected `type 1` segments
+        # Points defining boundaries of five connected `type 1` segments
         #  p2-------------------p3
-        #   | | | | | | | | | | |
+        #   |   |   |   |   |   |
         #  p1-------------------p4
         p1 = model.occ.addPoint(0.0, 0.0, 0.0)
         p2 = model.occ.addPoint(0.0, segmentBuilder.diameter, 0.0)
-        p3 = model.occ.addPoint(10 * segmentBuilder.length, segmentBuilder.diameter, 0.0)
-        p4 = model.occ.addPoint(10 * segmentBuilder.length, 0.0, 0.0)
+        p3 = model.occ.addPoint(5 * segmentBuilder.length, segmentBuilder.diameter, 0.0)
+        p4 = model.occ.addPoint(5 * segmentBuilder.length, 0.0, 0.0)
 
         l1 = model.occ.addLine(p2, p3)
         l2 = model.occ.addLine(p1, p4)
