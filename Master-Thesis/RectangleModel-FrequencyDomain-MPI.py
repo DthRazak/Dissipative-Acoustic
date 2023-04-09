@@ -220,7 +220,7 @@ def generate_frequency_config(bubble_centres, bubble_lvl):
         },
         'problem': {
             'fluid': 'Water',
-            'contaminant': 'Fuel oil',
+            'contaminant': 'Air',
             'pressure': 1e3,
             'freq_idx': 0,
             'control_frequencies': [1.5e3, 2e3, 3e3, 8e3]
@@ -320,7 +320,7 @@ def main():
         r3_str = f'{np.real(r3)};{np.imag(r3)}'
 
         write_results([[bubble_lvl, [r0_str, r1_str, r2_str, r3_str]]], 
-                        f'./results/frequency/res_fuel_oil_s5_1000_p_{i // split_step}.csv', 
+                        f'./results/frequency/res_air_s5_1000_p_{i // split_step}.csv', 
                         i == split_step)
 
     # list_timings(MPI.COMM_WORLD, [TimingType.wall])
