@@ -20,7 +20,12 @@ def main():
                         
             print(p.stdout, end='')
     elif args.name == 'time':
-        pass
+        for i in range(args.r[0], args.r[1]):
+            command = ['./RectangleModel-TimeDomain-MPI.py',
+                       '--i', f'{i}']
+            p = subprocess.run(command, capture_output=True, text=True)
+                        
+            print(p.stdout, end='')
 
 if __name__ == "__main__":
     main()
