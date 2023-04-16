@@ -412,7 +412,7 @@ def main():
 
     if MPI.COMM_WORLD.rank == 0:
         write_results([[bubble_lvl, time_results]], 
-                        f'./results/time/res_test_3.csv', 
+                        f'./results/time/res_air_s5_1000_p_{i // split_step}.csv', 
                         i % split_step == 0)
 
     # list_timings(MPI.COMM_WORLD, [TimingType.wall])
