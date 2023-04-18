@@ -392,7 +392,7 @@ def main():
     log_step = 1
     split_step = 250
 
-    input_data = read_input('./input/input_s5_4000.txt')
+    input_data = read_input('./input/input_single_seg_2000.txt')
 
     i = args.i
     if i % log_step == 0:
@@ -412,7 +412,7 @@ def main():
 
     if MPI.COMM_WORLD.rank == 0:
         write_results([[bubble_lvl, time_results]], 
-                        f'./results/time/res_air_s5_4000_p_{i // split_step}.csv', 
+                        f'./results/time/res_air_single_seg_2000_p_{i // split_step}.csv', 
                         i % split_step == 0)
 
     # list_timings(MPI.COMM_WORLD, [TimingType.wall])
